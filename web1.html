@@ -1,0 +1,93 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>사설 네트워크로 Web3.js 접근</title>
+</head>
+
+<script src="https://cdn.rawgit.com/ethereum/web3.js/develop/dist/web3.js"></script>
+
+<body>
+* 계정 주소: <span id="account_addr"></span><br>
+* 보유 코인 수량: <span id="account_balance"></span><br><br>
+
+* 수신 주소: <input id="to_addr" type="text" style="width: 400px;" value="0x67bb275399af1746055d1cfd841a195d1d2f6936"><br>
+* 보낼 코인 수: <input id="to_count" type="text" style="width: 100px;"><br><br>
+* 수신인 코인 수: <span id="to_balance"></span><br>
+* TXID: <span id="to_txid"></span><br><br>
+<button onclick="send()">전송</button>
+<button onclick="location.reload();">확인</button>
+
+<script>
+
+	var Web3 = require("web3");
+	var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); 
+
+	var sender_addr;
+	var balance_wei;
+	var balance_eth;
+	var to_addr = "0x67bb275399af1746055d1cfd841a195d1d2f6936";
+
+	getAccount();
+	
+	function getAccount() {
+		web3.eth.getAccounts(function(err,r){
+   			document.getElementById('account_addr').innerHTML = r[0];
+			sender_addr = r[0];
+			to_addr = r[1];
+			getBalance(sender_addr);
+			getBalanceTo(to_addr);
+			unlockAccount();
+		});
+	}
+
+	function unlockAccount() {
+		web3.personal.unlockAccount(sender_addr.toString(), "1", function(err,r){
+			console.log(r);
+		});	
+	}
+
+	function getBalance(sender_addr) {
+		web3.eth.getBalance(sender_addr, function(err, r) {
+			balance_wei = r;
+			balance_eth = web3.fromWei(balance_wei, "ether");
+   			document.getElementById('account_balance').innerHTML = balance_eth;
+   			console.log(balance_eth);
+		});
+	}
+	
+	function getBalanceTo(to_addr) {
+		web3.eth.getBalance(to_addr, function(err, r) {
+			balance_wei = r;
+			balance_eth = web3.fromWei(balance_wei, "ether");
+   			document.getElementById('to_balance').innerHTML = balance_eth;
+   			console.log(balance_eth);
+		});
+	}
+
+	function send() {
+		var tmp_to_addr = document.getElementById('to_addr').value;
+		if (tmp_to_addr == "") {
+			tmp_to_addr = to_addr;
+		}
+		
+		var tmp_send_count = document.getElementById('to_count').value;
+		if (tmp_send_count == "") {
+			alert("수량을 입력하세요");	
+		}
+		
+		tmp_send_count = web3.toWei(tmp_send_count, "ether");
+		
+		web3.eth.sendTransaction({
+    		from: sender_addr,
+    		to: tmp_to_addr,
+    		value: tmp_send_count
+		}, function(error, hash){
+			getBalanceTo(tmp_to_addr);
+   			document.getElementById('to_txid').innerHTML = hash;
+   			console.log(hash);
+		});
+
+	}
+</script>
+</body>
